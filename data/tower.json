@@ -1,0 +1,18 @@
+{
+    "metadata": {
+        "name": "Tower",
+        "filename": "tower.csv",
+        "formula": "",
+        "kind": "real-world",
+        "target": "towerResponse",
+        "test_rows": {
+            "end": 5000,
+            "start": 3136
+        },
+        "training_rows": {
+            "end": 3136,
+            "start": 0
+        }
+    },
+    "timestamp": "Sun, 26 Jun 2022 12:00:00 +0000"
+}
