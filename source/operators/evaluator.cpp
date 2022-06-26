@@ -128,7 +128,7 @@ namespace Operon {
             NonlinearLeastSquaresOptimizer<OptimizerType::EIGEN> opt(interpreter_.get(), genotype, dataset);
 #endif
             auto coeff = genotype.GetCoefficients();
-            auto summary = opt.Optimize(targetValues, trainingRange, iter);
+            auto summary = opt.Optimize(targetValues, trainingRange, iter, CallCount);
             ResidualEvaluations += summary.FunctionEvaluations;
             JacobianEvaluations += summary.JacobianEvaluations;
 

@@ -92,11 +92,11 @@ struct NonlinearLeastSquaresOptimizer<OptimizerType::EIGEN> : public OptimizerBa
     }
 
     template <DerivativeMethod D = DerivativeMethod::AUTODIFF>
-    auto Optimize(Operon::Span<const Operon::Scalar> const target, Range range, size_t iterations, bool writeCoefficients = true, bool /*unused*/ = false) -> OptimizerSummary
+    auto Optimize(Operon::Span<const Operon::Scalar> const target, Range range, size_t iterations, int callCount, bool writeCoefficients = true, bool /*unused*/ = false) -> OptimizerSummary
     {
         static_assert(D == DerivativeMethod::AUTODIFF, "Eigen::LevenbergMarquardt only supports autodiff.");
         ResidualEvaluator re(GetInterpreter(), GetTree(), GetDataset(), target, range);
-        Operon::TinyCostFunction<ResidualEvaluator, Operon::Dual, Operon::Scalar, Eigen::ColMajor> cf(re);
+        Operon::TinyCostFunction<ResidualEvaluator, Operon::Dual, Operon::Scalar, Eigen::ColMajor> cf(re, callCount);
         Eigen::LevenbergMarquardt<decltype(cf)> lm(cf);
         lm.setMaxfev(static_cast<int>(iterations+1));
 
@@ -105,6 +105,7 @@ struct NonlinearLeastSquaresOptimizer<OptimizerType::EIGEN> : public OptimizerBa
 
         Eigen::ComputationInfo info{};
         if (!coeff.empty()) {
+            std::cout << callCount << " Start minimize" << std::endl;
             Eigen::Matrix<Operon::Scalar, -1, 1> x0;
             x0 = Eigen::Map<decltype(x0)>(coeff.data(), static_cast<int>(coeff.size()));
             lm.minimize(x0);
@@ -112,6 +113,7 @@ struct NonlinearLeastSquaresOptimizer<OptimizerType::EIGEN> : public OptimizerBa
             if (writeCoefficients) {
                 tree.SetCoefficients({ x0.data(), static_cast<size_t>(x0.size()) });
             }
+            std::cout << callCount << " End minimize" << std::endl;
         }
         OptimizerSummary sum {};
         sum.InitialCost = -1;
@@ -120,6 +122,15 @@ struct NonlinearLeastSquaresOptimizer<OptimizerType::EIGEN> : public OptimizerBa
         sum.FunctionEvaluations = static_cast<int>(lm.nfev());
         sum.JacobianEvaluations = static_cast<int>(lm.njev());
         sum.Success = info == Eigen::ComputationInfo::Success;
+        std::cout << callCount
+                  << " Iterations " << iterations
+                  << " FuncEvals " << sum.FunctionEvaluations
+                  << " JacEvals " << sum.JacobianEvaluations
+                  << " Info " << (info == Eigen::ComputationInfo::Success ? "Success" :
+                                 (info == Eigen::ComputationInfo::NumericalIssue ? "NumericalIssue" :
+                                 (info == Eigen::ComputationInfo::NoConvergence ? "NoConvergence" : 
+                                 "InvalidInput")))
+                  << std::endl;
         return sum;
     }
 };

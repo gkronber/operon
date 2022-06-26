@@ -83,8 +83,8 @@ struct TinyCostFunction {
         NUM_PARAMETERS = Eigen::Dynamic, // NOLINT
     };
 
-    explicit TinyCostFunction(CostFunctor const& functor)
-        : functor_(functor)
+    explicit TinyCostFunction(CostFunctor const& functor, int callCount)
+        : functor_(functor), callCount_(callCount)
     {
     }
 
@@ -112,6 +112,7 @@ struct TinyCostFunction {
     auto operator()(Eigen::Matrix<Scalar, -1, 1> const& input, Eigen::Matrix<Scalar, -1, 1> &residual) -> int
     {
         Evaluate(input.data(), residual.data(), nullptr);
+        std::cout << callCount_ << " resid.norm() " << residual.norm() << std::endl;
         return 0;
     }
 
@@ -119,6 +120,23 @@ struct TinyCostFunction {
     {
         static_assert(StorageOrder == Eigen::ColMajor, "Eigen::LevenbergMarquardt requires the Jacobian to be stored in column-major format.");
         Evaluate(input.data(), nullptr, jacobian.data());
+
+        // analysis of Jacobian
+        Eigen::JacobiSVD<JacobianType> svd(jacobian);
+        auto m = NumParameters();
+        auto singularValues = svd.singularValues();
+        auto eps = 2.2204460492503131E-16; // the difference between 1.0 and the next larger double value
+        auto tol = m * eps;
+        auto rank = 0;
+        for(int i=0;i<m;i++) {
+          if(singularValues[i] > tol * singularValues[0]) rank++;
+        }
+        // full condition number largest singular value over smallest singular value
+        auto k = singularValues[0] / singularValues[m - 1];
+        auto k_subset = singularValues[0] / singularValues[rank - 1]; // condition number without the redundant parameters
+        std::cout << callCount_ << " Num_param " << m << " rank_Jac " << rank << " num_redundand_param " << m - rank
+                  << " log_K " << log10(k) << " log_K_rank " << log10(k_subset) << std::endl;
+
         return 0;
     }
 
@@ -127,6 +145,7 @@ struct TinyCostFunction {
 
 private:
     CostFunctor functor_;
+    int callCount_;
 };
 } // namespace Operon
 

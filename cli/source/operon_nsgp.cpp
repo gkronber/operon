@@ -28,6 +28,7 @@
 #include "operon/operators/non_dominated_sorter.hpp"
 #include "operon/operators/reinserter.hpp"
 #include "operon/operators/selector.hpp"
+#include "operon/nnls/nnls.hpp"
 
 #include "util.hpp"
 #include "operator_factory.hpp"
@@ -277,7 +278,15 @@ auto main(int argc, char** argv) -> int
             tf::Taskflow taskflow;
 
             auto evalTrain = taskflow.emplace([&]() {
-                estimatedTrain = interpreter.Evaluate<Operon::Scalar>(best.Genotype, problem.GetDataset(), trainingRange);
+                 std::cout << "Stats of best solution:" << std::endl;
+                 auto targetValues = problem.GetDataset().GetValues(problem.TargetVariable()).subspan(trainingRange.Start(), trainingRange.Size());
+                 Operon::NonlinearLeastSquaresOptimizer<Operon::OptimizerType::EIGEN> opt(interpreter, best.Genotype, problem.GetDataset());
+
+                 auto coeff = best.Genotype.GetCoefficients();
+                 auto const iter = 1;
+                 auto summary = opt.Optimize(targetValues, trainingRange, iter,  /* writeCoefficients = */ true, /* bool /*unused*/ false /* not used */);
+                 std::cout << "End stats of best solution" << std::endl;
+                 estimatedTrain = interpreter.Evaluate<Operon::Scalar>(best.Genotype, problem.GetDataset(), trainingRange);
             });
 
             auto evalTest = taskflow.emplace([&]() {
