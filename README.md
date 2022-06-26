@@ -2,6 +2,10 @@
     <img src="./rtd/_static/logo_mini.png" height="80px" />
 </p>
 
+# Fork Information
+
+*This is a fork of [Operon](https://github.com/heal-research/operon) for my personal use. Use the original upstream repository instead.*
+
 # Modern C++ framework for Symbolic Regression
 
 [![License](https://img.shields.io/github/license/heal-research/operon?style=flat)](https://github.com/heal-research/operon/blob/master/LICENSE)
