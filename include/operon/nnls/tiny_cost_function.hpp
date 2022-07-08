@@ -125,7 +125,8 @@ struct TinyCostFunction {
         Eigen::JacobiSVD<JacobianType> svd(jacobian);
         auto m = NumParameters();
         auto singularValues = svd.singularValues();
-        auto eps = 2.2204460492503131E-16; // the difference between 1.0 and the next larger double value
+//        auto eps = 2.2204460492503131E-16; // the difference between 1.0 and the next larger double value
+        auto eps = std::numeric_limits<Scalar>::epsilon(); // 1.192092896e-7f; // difference between 1.0 and the next larger float value
         auto tol = m * eps;
         auto rank = 0;
         for(int i=0;i<m;i++) {
